@@ -5,8 +5,10 @@ mysql-server
 php5-cli
 php5-mysql
 php5-mcrypt
-nginx
+php5-curl
+php5-gd
 php5-fpm
+nginx
 phpmyadmin
 ]
 
