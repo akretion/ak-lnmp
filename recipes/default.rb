@@ -1,37 +1,38 @@
 include_recipe "ak-tools::server"
 
+
+group node[:webserver][:unix_user] do
+end
+  
+user node[:webserver][:unix_user] do
+  comment "Default User"
+  gid node[:webserver][:unix_user]
+  home "/home/#{node[:webserver][:unix_user]}"
+  supports :manage_home=>true
+  shell "/bin/bash"
+end
+
+
+
 directory "/var/www" do
-  group node[:magento][:unix_user]
-  owner node[:magento][:unix_user]
+  group node[:webserver][:unix_user]
+  owner node[:webserver][:unix_user]
   mode "0755"
   action :create
 end
 
 execute "assign-root-password" do
-  command "/usr/bin/mysqladmin -u root password #{node[:lamp][:mysql_root_password]}"
+  command "/usr/bin/mysqladmin -u root password #{node[:mysql][:root_password]}"
   action :run
   only_if "/usr/bin/mysql -u root -e 'show databases;'"
 end
 
+if node[:mysql][:db][:database]
 #Create mysql user
-execute "mysql-install-mage-privileges" do
-  command "/usr/bin/mysql -u root -p#{node[:lamp][:mysql_root_password]} -Dmysql -e \"GRANT ALL ON #{node[:magento][:db][:database]}. * TO '#{node[:magento][:db][:username]}'@'localhost' IDENTIFIED BY '#{node[:magento][:db][:password]}'; FLUSH PRIVILEGES;\" " 
-  action :run
-end
-
-#Install fastcgi for nginx
-cookbook_file "/etc/init.d/php-fastcgi" do
-  source "php-fastcgi"
-  owner 'root'
-  group 'root'
-  mode 0755
-  action :create_if_missing
-  notifies :restart, "service[php-fastcgi]"
-end
-
-service "php-fastcgi" do
-  supports :status => true, :restart => true, :reload => true
-  action [ :enable, :start ]
+  execute "mysql-install-mage-privileges" do
+    command "/usr/bin/mysql -u root -p#{node[:mysql][:root_password]} -Dmysql -e \"GRANT ALL ON #{node[:mysql][:db][:database]}. * TO '#{node[:mysql][:db][:username]}'@'localhost' IDENTIFIED BY '#{node[:mysql][:db][:password]}'; FLUSH PRIVILEGES;\" " 
+    action :run
+  end
 end
 
 
